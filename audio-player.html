@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="مشغل الصوتيات">
+<meta name="color-scheme" content="light dark">
+<title>مشغل الصوتيات</title>
+<style>
+:root{--bg:#f3efe8;--card:#fbf9f5;--ink:#2f3a3a;--mute:#7b8784;--acc:#5f8f8b;--acc2:#e3ede9;--line:#e1dbd0;--dn:#efe2c8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#161c1e;--card:#1f282a;--ink:#e3e9e7;--mute:#8d9a97;--acc:#7fb3ae;--acc2:#2a3a3a;--line:#2e3b3c;--dn:#3b3425}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px -apple-system,"Segoe UI",Tahoma,sans-serif;padding-bottom:200px}
+header{padding:16px 16px 4px;font-size:22px;font-weight:700}
+.bar{display:flex;gap:8px;padding:6px 16px;align-items:center;flex-wrap:wrap}
+select,button,.btn{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+select{flex:1;min-width:0}
+button:active,.btn:active{background:var(--acc2)}
+.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+.tot{padding:2px 16px 4px;color:var(--mute);font-size:14px}
+.tot.warn{background:var(--dn);color:var(--ink);border-radius:12px;margin:4px 16px;padding:10px 12px;cursor:pointer}
+.list{padding:4px 16px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;margin:8px 0}
+.row.on{border-color:var(--acc);background:var(--acc2)}
+.row.on .nm{font-weight:700}
+.row.dn{background:var(--dn);border-color:var(--dn)}
+.row.dn .nm{color:var(--mute)}
+.row.miss .nm{opacity:.6}
+.nm{flex:1 0 100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:6px 2px}
+.mv{display:flex;gap:6px}
+.mv button,.rep{padding:8px 14px;border-radius:10px}
+select.rep{flex:none;min-width:76px}
+.x{color:#b46a6a;padding:10px 12px;margin-inline-start:auto}
+.empty{color:var(--mute);text-align:center;padding:30px 10px}
+#pl{position:fixed;inset:auto 0 0 0;background:var(--card);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 20px #0002}
+#now{text-align:center;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sub{text-align:center;color:var(--mute);font-size:13px;min-height:18px}
+.dbg{text-align:center;color:var(--mute);font-size:11px;min-height:14px;opacity:.75;direction:ltr}
+input[type=range]{width:100%;accent-color:var(--acc);direction:ltr}
+.ctl{display:flex;justify-content:center;gap:18px;margin-top:6px;direction:ltr}
+.ctl button{width:54px;height:54px;border-radius:50%;font-size:22px;padding:0}
+.ctl .pri{width:64px;height:64px;font-size:26px}
+#dg{position:fixed;inset:0;background:#0007;align-items:center;justify-content:center;z-index:9;padding:20px}
+.box{background:var(--card);border-radius:16px;padding:18px;width:100%;max-width:340px}
+#dm{white-space:pre-line;line-height:1.7}
+.box input{width:100%;margin:12px 0;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.ctl2{display:flex;gap:8px;margin-top:12px}
+#toast{display:none;position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:12px;right:12px;background:#b46a6a;color:#fff;padding:10px;border-radius:12px;z-index:10;text-align:center}
+#toast.ok{background:var(--acc)}
+</style>
+</head>
+<body>
+<header>🎧 مشغل الصوتيات</header>
+<div class="bar">
+  <select id="sel"></select>
+  <button id="nw">＋ قائمة</button>
+  <button id="rn">✎ اسم</button>
+  <button id="dl">🗑</button>
+</div>
+<div class="bar">
+  <label class="btn pri">＋ إضافة ملفات<input id="fi" type="file" accept="audio/*,.mp3,.m4a,.m4b,.aac,.wav,.flac,.ogg,.oga,.opus,.wma,.aif,.aiff,.caf,.amr,.mp4,.webm,.weba,.mka" multiple hidden></label>
+  <label class="btn">📁 ربط مجلد<input id="lf" type="file" webkitdirectory multiple hidden></label>
+</div>
+<div class="bar">
+  <button id="sv" class="pri">💾 حفظ</button>
+  <button id="hs">📲 إضافة للشاشة الرئيسية</button>
+</div>
+<div class="tot" id="tot"></div>
+<div class="list" id="ls"></div>
+<div id="pl">
+  <div id="now">لا يوجد تشغيل</div>
+  <div id="sub"></div>
+  <div id="dbg" class="dbg"></div>
+  <input type="range" id="sk" min="0" max="1000" value="0">
+  <div class="ctl">
+    <button id="pv">⏮</button>
+    <button id="pp" class="pri">▶</button>
+    <button id="nx">⏭</button>
+  </div>
+</div>
+<div id="dg" style="display:none"><div class="box"><div id="dm"></div><input id="di"><div class="ctl2"><button id="dno">إلغاء</button><button id="dok" class="pri">موافق</button></div></div></div>
+<div id="toast"></div>
+<audio id="au" playsinline preload="auto"></audio>
+<script>
+const $=i=>document.getElementById(i);
+const elA=$('au'),elB=document.createElement('audio');elB.setAttribute('playsinline','');elB.preload='auto';document.body.appendChild(elB);
+let au=elA,idle=elB;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY='audplayer.v2';
+// ---- تخزين القوائم فقط (بدون نسخ الملفات الصوتية) ----
+const dbp=new Promise((res,rej)=>{try{const q=indexedDB.open('audplayer',1);q.onupgradeneeded=()=>q.result.createObjectStore('kv');q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}catch(e){rej(e)}});
+dbp.catch(()=>{});
+const tx=(m,f)=>dbp.then(d=>new Promise((res,rej)=>{const r=f(d.transaction('kv',m).objectStore('kv'));r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}));
+const idbGet=k=>tx('readonly',s=>s.get(k)),idbSet=(k,v)=>tx('readwrite',s=>s.put(v,k));
+const toast=(m,ok)=>{const t=$('toast');t.textContent=m;t.className=ok?'ok':'';t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',4500)};
+const dlg=(msg,def,inp,single)=>new Promise(res=>{$('dm').textContent=msg;const i=$('di');i.style.display=inp?'block':'none';i.value=def||'';$('dno').style.display=single?'none':'';$('dg').style.display='flex';const fin=v=>{$('dg').style.display='none';res(v)};$('dok').onclick=()=>fin(inp?i.value:true);$('dno').onclick=()=>fin(inp?null:false);if(inp)setTimeout(()=>i.focus(),50)});
+const prompt2=(m,d)=>dlg(m,d,true),confirm2=m=>dlg(m),info=m=>dlg(m,'',false,true);
+
+let lists=[],cur=null,P={l:null,i:0,r:0},url=null,want=false,doneL=null;
+const files=new Map(),done=new Set();
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const MT={mp3:'audio/mpeg',m4a:'audio/mp4',m4b:'audio/mp4',mp4:'audio/mp4',aac:'audio/aac',wav:'audio/wav',wave:'audio/wav',flac:'audio/flac',ogg:'audio/ogg',oga:'audio/ogg',opus:'audio/ogg',weba:'audio/webm',webm:'audio/webm',aif:'audio/aiff',aiff:'audio/aiff',caf:'audio/x-caf',amr:'audio/amr',wma:'audio/x-ms-wma',mka:'audio/x-matroska'};
+const mime=(n,t)=>{const e=(n.split('.').pop()||'').toLowerCase();if(MT[e])return MT[e];if(/m4a/.test(t||''))return'audio/mp4';return t||'audio/mpeg'};
+const blobOf=f=>new Blob([f],{type:mime(f.name,f.type)});
+const curList=()=>lists.find(l=>l.id===cur);
+let remote=null,dirty=false,lastCloud=false,cloudErr='لم يكتمل الاتصال بالحساب بعد';
+async function persist(){
+  const s=JSON.stringify({lists,cur});let a=false,b=false,c=false;
+  try{localStorage.setItem(KEY,s);a=localStorage.getItem(KEY)===s}catch(e){}
+  try{await idbSet(KEY,s);b=(await idbGet(KEY))===s}catch(e){}
+  if(remote){try{await remote.set({v:2,lists:JSON.parse(JSON.stringify(lists)),cur:cur||''});const d=await remote.get();c=d.exists&&(d.data().lists||[]).map(l=>l.id+':'+l.items.length).join()===lists.map(l=>l.id+':'+l.items.length).join();if(!c)cloudErr='لم يتطابق ما قُرئ بعد الكتابة'}catch(e){cloudErr='فشل الكتابة: '+((e&&(e.code||e.message))||'')}}
+  lastCloud=c;return a||b||c;
+}
+const save=()=>{dirty=true;persist();try{preloadNext()}catch(e){}};
+const fmtT=s=>{const tm=Math.round(s/60),h=Math.floor(tm/60),m=tm%60;if(!s)return'';if(!tm)return'أقل من دقيقة';return(h?h+' ساعة':'')+(h&&m?' و ':'')+(m?m+' دقيقة':'')};
+const totalText=L=>{if(!L.items.length)return'';let s=0,unk=0,miss=0;for(const t of L.items){if(t.dur===undefined)unk++;else s+=t.dur*t.repeat;if(!files.has(t.id))miss++}
+  return'المدة الإجمالية مع التكرار: '+(fmtT(s)||'—')+(unk?' (مدة بعض الملفات غير معروفة بعد)':'')+(miss?' · ⚠ '+miss+' ملف غير مربوط — اضغط هنا لربطها':'')};
+const measure=f=>new Promise(res=>{const a=new Audio(),u=URL.createObjectURL(blobOf(f));let d=false;const g=v=>{if(d)return;d=true;URL.revokeObjectURL(u);res(isFinite(v)?v:0)};a.preload='metadata';a.onloadedmetadata=()=>g(a.duration);a.onerror=()=>g(0);setTimeout(()=>g(0),8000);a.src=u});
+async function fillDur(){let ch=false;for(const L of lists)for(const t of L.items)if(t.dur===undefined&&files.has(t.id)){t.dur=await measure(files.get(t.id));ch=true;render()}if(ch)save()}
+// ---- الواجهة ----
+function render(){
+  $('sel').innerHTML=lists.map(l=>`<option value="${l.id}" ${l.id===cur?'selected':''}>${esc(l.name)}</option>`).join('');
+  const L=curList(),box=$('ls');$('tot').textContent=L?totalText(L):'';$('tot').className='tot'+(L&&L.items.some(t=>!files.has(t.id))?' warn':'');
+  if(!L){box.innerHTML='<div class="empty">اضغط «＋ قائمة» لإنشاء أول قائمة</div>';return}
+  if(!L.items.length){box.innerHTML='<div class="empty">القائمة فارغة، أضف ملفات صوتية</div>';return}
+  box.innerHTML=L.items.map((t,i)=>{const here=P.l===L.id,ok=files.has(t.id),cls=here&&P.i===i?'on':here&&done.has(t.id)?'dn':'';
+    return `<div class="row ${cls} ${ok?'':'miss'}"><div class="nm" data-p="${i}">${!ok?'⚠ ':here&&P.i!==i&&done.has(t.id)?'✓ ':''}${esc(t.name)}</div>
+    <div class="mv"><button data-m="${i}:-1">▲</button><button data-m="${i}:1">▼</button></div>
+    <select class="rep" data-r="${i}">${REP.map(n=>`<option value="${n}"${n===t.repeat?' selected':''}>×${n}</option>`).join('')}</select>
+    <button class="x" data-x="${i}">✕</button></div>`}).join('');
+}
+function status(){
+  const L=lists.find(l=>l.id===P.l),t=L&&L.items[P.i];
+  $('now').textContent=t?t.name:'لا يوجد تشغيل';
+  $('sub').textContent=t?`${L.name} · التكرار ${P.r+1} من ${t.repeat}`:'';
+  $('pp').textContent=au.paused?'▶':'⏸';
+  if('mediaSession' in navigator&&t)navigator.mediaSession.metadata=new MediaMetadata({title:t.name,artist:L.name});
+  render();
+}
+// ---- التشغيل ----
+const readDU=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(blobOf(f))});
+let lastErr='';
+async function startFile(f){
+  const mk=[()=>URL.createObjectURL(blobOf(f)),()=>URL.createObjectURL(f),()=>readDU(f)];
+  for(let n=0;n<mk.length;n++){
+    try{
+      const u=await mk[n]();
+      if(au._url&&au._url.startsWith('blob:'))URL.revokeObjectURL(au._url);
+      au._url=u;au.src=u;await au.play();au._unlocked=true;return true;
+    }catch(e){
+      if(e&&e.name==='AbortError')return true;
+      lastErr=((e&&e.name)||'خطأ')+(au.error?' #'+au.error.code:'')+' (طريقة '+(n+1)+')';
+      if(e&&e.name==='NotAllowedError')return false;
+    }
+  }
+  return false;
+}
+// عنصرا صوت بالتناوب: يُحمّل الملف التالي مسبقاً في العنصر الخامل ويُشغّل بـ play() فقط حتى يعمل مع قفل الشاشة
+const on=(ev,fn)=>[elA,elB].forEach(el=>el.addEventListener(ev,x=>{if(el===au)fn(x)}));
+const SIL=(()=>{const n=800,b=new Uint8Array(44+n),v=new DataView(b.buffer),w=(o,s)=>[...s].forEach((c,k)=>b[o+k]=c.charCodeAt(0));w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);b.fill(128,44);return URL.createObjectURL(new Blob([b],{type:'audio/wav'}))})();
+const unlock=el=>{if(el._unlocked)return;el._unlocked=true;try{el.src=SIL;el.play().then(()=>el.pause()).catch(()=>{})}catch(e){}};
+const nextIndex=(L,i)=>{const n=L.items.length;for(let k=1;k<=n;k++){const j=(i+k)%n;if(files.has(L.items[j].id))return j}return -1};
+function preloadNext(){
+  const L=lists.find(x=>x.id===P.l);if(!L||!au.src)return;
+  const cu=L.items[P.i];if(!cu)return;
+  const j=nextIndex(L,P.i);if(j<0||L.items[j].id===cu.id)return;
+  const nt=L.items[j],el=idle;
+  if(el._for===nt.id)return;
+  el._for=nt.id;el._ok=false;
+  if(el._url)URL.revokeObjectURL(el._url);
+  el._url=URL.createObjectURL(blobOf(files.get(nt.id)));
+  el.onloadedmetadata=()=>{if(el._for===nt.id)el._ok=true};
+  el.src=el._url;try{el.load()}catch(e){}
+}
+async function load(l,i,r=0,dir=1){
+  const L=lists.find(x=>x.id===l);if(!L||!L.items.length)return;
+  const n=L.items.length;let k=((i%n)+n)%n,tries=0;
+  while(!files.has(L.items[k].id)&&tries<n){k=(k+dir+n)%n;tries++;r=0}
+  if(!files.has(L.items[k].id)){au.pause();want=false;P={l,i:k,r:0};toast('الملفات غير مربوطة، اضغط «📁 ربط مجلد»');status();return}
+  const same=P.l===l&&P.i===k&&au.src&&au._id===L.items[k].id;
+  P={l,i:k,r};want=true;if(doneL!==l){done.clear();doneL=l}
+  const t=L.items[k];
+  if(same){
+    try{au.currentTime=0}catch(e){}
+    try{await au.play()}catch(e){if(!await startFile(files.get(t.id)))toast('تعذّر تشغيل الملف: '+lastErr)}
+  }else if(idle._for===t.id&&idle._ok){
+    const old=au;au=idle;idle=old;idle._for=null;idle._ok=false;
+    try{au.currentTime=0}catch(e){}
+    try{await au.play();au._unlocked=true}catch(e){if(!await startFile(files.get(t.id)))toast('تعذّر تشغيل الملف: '+lastErr)}
+    try{old.pause()}catch(e){}
+  }else if(!await startFile(files.get(t.id)))toast('تعذّر تشغيل الملف: '+lastErr);
+  au._id=t.id;
+  status();preloadNext();
+}
+const nextTrack=()=>{const L=lists.find(l=>l.id===P.l);if(L&&P.i+1>=L.items.length)done.clear();return load(P.l,P.i+1,0,1)};
+on('ended',()=>{
+  const L=lists.find(l=>l.id===P.l),t=L&&L.items[P.i];if(!t)return;
+  if(P.r+1<t.repeat){P.r++;au.currentTime=0;au.play();status()}else{done.add(t.id);nextTrack()}
+});
+on('play',status);on('pause',status);
+// مراقبة: تسجيل آخر حدث للصوت + منع التجمّد
+const dbg=m=>{$('dbg').textContent=m+' @ '+new Date().toLocaleTimeString()};
+['stalled','waiting','error','abort','emptied','ended','pause'].forEach(n=>on(n,()=>dbg(n+(au.error?' #'+au.error.code:'')+' t='+Math.round(au.currentTime)+'/'+Math.round(au.duration||0))));
+let lastT=-1,stuck=0;
+setInterval(()=>{const t=au.currentTime;
+  if(want&&au.src&&au.error){stuck=0;dbg('error #'+au.error.code+' skip');au.dispatchEvent(new Event('ended'))}
+  else if(want&&au.src&&!au.paused&&!au.ended&&t===lastT){if(++stuck>=3){stuck=0;dbg('frozen t='+Math.round(t)+' skip');au.dispatchEvent(new Event('ended'))}}
+  else stuck=0;
+  lastT=t},2000);
+// استئناف التشغيل بعد المكالمات أو أي انقطاع من النظام
+const resume=()=>{if(want&&au.paused&&au.src&&!au.ended)au.play().catch(()=>{})};
+setInterval(resume,1500);
+document.addEventListener('visibilitychange',()=>{resume();if(document.hidden)persist()});
+window.addEventListener('focus',resume);window.addEventListener('pageshow',resume);window.addEventListener('pagehide',()=>persist());
+on('timeupdate',()=>{if(au.duration)$('sk').value=au.currentTime/au.duration*1000});
+$('sk').oninput=e=>{if(au.duration)au.currentTime=e.target.value/1000*au.duration};
+$('pp').onclick=()=>{unlock(idle);if(!au.src){const L=curList();if(L)load(L.id,0)}else if(au.paused){want=true;au.play()}else{want=false;au.pause()}};
+$('nx').onclick=()=>P.l&&nextTrack();
+$('pv').onclick=()=>P.l&&load(P.l,P.i-1,0,-1);
+if('mediaSession' in navigator){
+  const h=(a,f)=>{try{navigator.mediaSession.setActionHandler(a,f)}catch(e){}};
+  h('play',()=>{want=true;au.play()});h('pause',()=>{want=false;au.pause()});h('nexttrack',()=>nextTrack());h('previoustrack',()=>load(P.l,P.i-1,0,-1));
+}
+// ---- القوائم ----
+$('tot').onclick=()=>{if($('tot').classList.contains('warn'))$('lf').click()};
+$('sel').onchange=e=>{cur=e.target.value;save();render()};
+$('nw').onclick=async()=>{const n=await prompt2('اسم القائمة الجديدة');if(!n||!n.trim())return;const l={id:uid(),name:n.trim(),items:[]};lists.push(l);cur=l.id;save();render()};
+$('rn').onclick=async()=>{const L=curList();if(!L)return;const n=await prompt2('الاسم الجديد',L.name);if(!n||!n.trim())return;L.name=n.trim();save();render()};
+$('dl').onclick=async()=>{const L=curList();if(!L||!await confirm2('حذف القائمة «'+L.name+'»؟'))return;
+  for(const t of L.items)files.delete(t.id);
+  if(P.l===L.id){au.pause();au.removeAttribute('src');P={l:null,i:0,r:0}}
+  lists=lists.filter(l=>l!==L);cur=lists[0]?lists[0].id:null;save();status()};
+$('fi').onchange=e=>{
+  let L=curList();if(!L){L={id:uid(),name:'قائمتي',items:[]};lists.push(L);cur=L.id}
+  for(const f of e.target.files){
+    const id=uid();files.set(id,f);
+    L.items.push({id,name:f.name.replace(/\.[^.]+$/,''),fname:f.name,size:f.size,repeat:1});
+  }
+  e.target.value='';save();render();fillDur();
+};
+$('lf').onchange=e=>{
+  let n=0;
+  for(const f of e.target.files){let hit=false;
+    for(const L of lists)for(const t of L.items)if(t.fname===f.name){files.set(t.id,f);hit=true}
+    if(hit)n++}
+  e.target.value='';render();fillDur();
+  toast(n?`تم ربط ${n} ملف`:'لم يتطابق اسم أي ملف مع الملفات المحفوظة',!!n);
+};
+$('sv').onclick=async()=>{const ok=await persist();
+  toast(lastCloud?`✓ تم حفظ ${lists.length} قائمة في حسابك (بدون نسخ الملفات الصوتية)`:ok?(!window.claude?'✓ تم الحفظ في هذا المتصفح (بدون نسخ الملفات الصوتية)':'حُفظ على الهاتف فقط وقد لا يبقى بعد إغلاق الصفحة (الحفظ في الحساب غير متاح)'+(cloudErr?' ['+cloudErr+']':'')):'تعذّر الحفظ: التخزين محجوب',lastCloud||(ok&&!window.claude))};
+$('hs').onclick=()=>info('لإضافة الصفحة إلى الشاشة الرئيسية:\n١) افتح الصفحة في Safari أو Chrome (وليس داخل تطبيق آخر).\n٢) اضغط زر المشاركة ⬆︎.\n٣) اختر «إضافة إلى الشاشة الرئيسية».\n٤) مهم: إن ظهر خيار «الفتح كتطبيق ويب» (Open as Web App) فعطّله، ليفتح الاختصار في المتصفح وليس كتطبيق مستقل، لأن التشغيل مع قفل الشاشة أفضل في المتصفح.\n\nمهم: النسخة التي على الشاشة الرئيسية لها تخزين منفصل عن Safari، فأنشئ قوائمك واضغط «حفظ» من داخلها.');
+if(navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches))$('hs').style.display='none';
+$('ls').onclick=async e=>{
+  const L=curList(),b=e.target.closest('[data-p],[data-d],[data-x],[data-m]');if(!L||!b)return;
+  if(b.dataset.p!==undefined){const t=L.items[+b.dataset.p];if(!files.has(t.id)){toast('هذا الملف غير مربوط، اضغط «📁 ربط مجلد»');return}unlock(idle);done.clear();load(L.id,+b.dataset.p)}
+  else if(b.dataset.m){const[i,d]=b.dataset.m.split(':').map(Number),j=i+d;if(j<0||j>=L.items.length)return;[L.items[i],L.items[j]]=[L.items[j],L.items[i]];if(P.l===L.id){if(P.i===i)P.i=j;else if(P.i===j)P.i=i}save();render()}
+  else if(b.dataset.d){const i=+b.dataset.d,t=L.items[i];t.repeat=t.repeat>=10?1:t.repeat+1;save();P.l===L.id&&P.i===i?status():render()}
+  else{const i=+b.dataset.x,t=L.items[i];if(!await confirm2('حذف «'+t.name+'»؟'))return;
+    files.delete(t.id);L.items.splice(i,1);
+    if(P.l===L.id){if(i<P.i)P.i--;else if(i===P.i){au.pause();au.removeAttribute('src');P={l:null,i:0,r:0}}}
+    save();status()}
+};
+const REP=Array.from({length:100},(_,k)=>k+1);
+$('ls').onchange=e=>{const s=e.target;if(!s.dataset||s.dataset.r===undefined)return;const L=curList(),i=+s.dataset.r,t=L&&L.items[i];if(!t)return;t.repeat=+s.value;save();P.l===L.id&&P.i===i?status():render()};
+// ---- أيقونة الشاشة الرئيسية ----
+try{const c=document.createElement('canvas');c.width=c.height=180;const x=c.getContext('2d');x.fillStyle='#5f8f8b';x.fillRect(0,0,180,180);x.font='96px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('🎧',90,98);const l=document.createElement('link');l.rel='apple-touch-icon';l.href=c.toDataURL('image/png');document.head.appendChild(l)}catch(e){}
+// ---- تحميل المحفوظ ----
+(async()=>{
+  let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
+  if(!raw){try{raw=await idbGet(KEY)}catch(e){}}
+  if(raw){try{const s=JSON.parse(raw);lists=s.lists||[];cur=lists.some(l=>l.id===s.cur)?s.cur:(lists[0]&&lists[0].id)}catch(e){}}
+  render();
+})();
+// ---- مزامنة القوائم مع حسابك (تبقى حتى لو مُسح تخزين المتصفح) ----
+(async()=>{
+  try{
+    if(!(window.claude&&claude.use)){cloudErr='لا توجد واجهة الحساب (claude) في هذا العرض';return}
+    const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
+    if(!db||!user){cloudErr='الصلاحية غير ممنوحة: db='+!!db+' user='+!!user;return}
+    const id=await user.id();if(!id){cloudErr='لا يوجد معرّف مستخدم';return}
+    const ref=db.collection('data/users/'+id).doc('lists');
+    const snap=await ref.get();
+    remote=ref;cloudErr='';
+    if(snap.exists&&!dirty){
+      const d=snap.data();
+      lists=JSON.parse(JSON.stringify(d.lists||[]));cur=lists.some(l=>l.id===d.cur)?d.cur:(lists[0]&&lists[0].id);
+      render();
+    }else if(lists.length||dirty)persist();
+  }catch(e){cloudErr='استثناء: '+((e&&(e.code||e.name))||'')+' '+((e&&e.message)||'')}
+})();
+</script>
+</body>
+</html>
